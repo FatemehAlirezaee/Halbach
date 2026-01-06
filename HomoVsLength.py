@@ -1,5 +1,5 @@
 """ 
-Halbach_Length
+Halbach magnetic field vs Length
  @author: Fatemeh Alirezaee 
  """
 
@@ -11,21 +11,19 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from decimal import Decimal
 
-# ------------------------
-# Parameters
-# ------------------------
+
 Br = 1.45  # in T
-s = 1/3  #Cube Demagnetization
+s = 1/3  
 mu_r = 1.05
 
-# Define the three configurations
+
 param_sets = [
     {'ring_radius': Decimal('0.180'), 'N_magnets': 72, 'a': Decimal('0.010'), 'min_length_mm': 360, 'max_length_mm': 1440, 'label': 'r=0.180, N=72, a=0.010'},
     {'ring_radius': Decimal('0.180'), 'N_magnets': 48, 'a': Decimal('0.015'), 'min_length_mm': 360, 'max_length_mm': 1440, 'label': 'r=0.180, N=48, a=0.015'},
     {'ring_radius': Decimal('0.150'), 'N_magnets': 60, 'a': Decimal('0.010'), 'min_length_mm': 300, 'max_length_mm': 1200, 'label': 'r=0.150, N=60, a=0.010'}
 ]
 
-# DSV
+
 xd, yd, zd = 0.0, 0.0, 0.0
 dsv_radius = 0.10
 dsv_step = 0.010
@@ -52,7 +50,7 @@ def create_ring(radius, N, magnet_dim, magnetization):
         magnets.append(mag)
     return magpy.Collection(magnets)
 
-# Dictionary to hold summary dataframes for each config
+
 summary_dfs = {}
 
 for param in param_sets:
@@ -63,17 +61,17 @@ for param in param_sets:
     max_length_mm = param['max_length_mm']
     label = param['label']
 
-    # Set step_mm based on a
+
     a_mm = int(float(a) * 1000)
     step_mm = 20 if a_mm == 10 else 30
 
     magnetization = Br / (1 - s + s * mu_r)  # in T
     magnet_dim = (float(a), float(a), float(a))
 
-    # Generate target lengths exactly
+
     target_lengths_mm = list(range(min_length_mm, max_length_mm + 1, step_mm))
 
-    # Configurations
+
     configs = []
     for tlm in target_lengths_mm:
         tl = Decimal(tlm) / Decimal(1000)
@@ -87,7 +85,7 @@ for param in param_sets:
         gap_mm = round(float(gap * Decimal(1000)), 3)
         configs.append((num_rings, gap_mm, gap))  # Include exact gap (Decimal)
 
-    # Dynamic directories based on parameters
+
     config_id = f"r{int(float(ring_radius)*1000)}_N{N_magnets}_a{int(float(a)*1000)}"
     config_dir = f"Config_{config_id}"
     plots_dir = f"Plots_{config_id}"
@@ -99,17 +97,17 @@ for param in param_sets:
     summary_data = []
     summary_csv = f"{field_dir}/Halbach_summary.csv"
 
-    # Loop over all configurations
+ 
     for num_rings, gap_mm, exact_gap in tqdm(configs, desc=f"Simulating Halbach stacks for {label}"):
         gap = exact_gap  # Use exact Decimal gap for calculations
         center_to_center = a + gap
         x_positions = np.array([float((Decimal(-(num_rings - 1)) / Decimal(2) + Decimal(i)) * center_to_center) for i in range(num_rings)])
 
-        # Calculate axial length exactly
+
         length = Decimal(num_rings) * a + Decimal(num_rings - 1) * gap
         length_mm = float(length * Decimal(1000))  # Exact due to Decimal
 
-        # Create stacked rings (lightweight, always do)
+
         rings = []
         for xpos in x_positions:
             ring = create_ring(ring_radius, N_magnets, magnet_dim, magnetization)
@@ -117,7 +115,7 @@ for param in param_sets:
             rings.append(ring)
         halbach = magpy.Collection(rings)
 
-        # html_file = f"{config_dir}/Halbach_{num_rings}rings_length{length_mm}.html"
+
         # if not os.path.exists(html_file):
         #     for ring_c in halbach.sources:
         #         for mag in ring_c.sources:
@@ -208,10 +206,10 @@ for param in param_sets:
     summary_df = pd.DataFrame(summary_data)
     summary_df.to_csv(summary_csv, index=False, float_format='%.6e')
 
-    # Store the summary_df for combined plots
+
     summary_dfs[label] = summary_df
 
-    # Generate individual summary plots for this config
+
     for comp in ['By', 'Bx', 'Bz']:
         plot_file = f"{plots_dir}/H_{comp}_vs_length.png"
         if not os.path.exists(plot_file):
@@ -266,15 +264,14 @@ for param in param_sets:
         plt.savefig("by_plot_file.png", dpi=600, bbox_inches='tight')
         plt.close()
 
-# Now generate combined plots for H_By, Mean_By, Mean_absBx, Mean_absBz
-# Annotations specifications
+
 annot_configs = {
     'r=0.180, N=48, a=0.015': [360.0, 720.0],
     'r=0.150, N=60, a=0.010': [300.0, 900.0],
     'r=0.180, N=72, a=0.010': [420.0, 600.0]
 }
 
-# Combined H_By vs Length
+
 combined_h_by_file = "Plots_combined/H_By_vs_length.png"
 os.makedirs("Plots_combined", exist_ok=True)
 if not os.path.exists(combined_h_by_file):
@@ -297,7 +294,7 @@ if not os.path.exists(combined_h_by_file):
     plt.savefig("combined_h_by_file.png", dpi=600, bbox_inches='tight')
     plt.close()
 
-# Combined Mean_By vs Length
+
 combined_mean_by_file = "Plots_combined/Mean_By_vs_length.png"
 if not os.path.exists(combined_mean_by_file):
     plt.figure()
@@ -319,7 +316,7 @@ if not os.path.exists(combined_mean_by_file):
     plt.savefig("combined_mean_by_file.png", dpi=600, bbox_inches='tight')
     plt.close()
 
-# Combined Mean_absBx vs Length
+
 combined_mean_absbx_file = "Plots_combined/Mean_absBx_vs_length.png"
 if not os.path.exists(combined_mean_absbx_file):
     plt.figure()
@@ -341,7 +338,7 @@ if not os.path.exists(combined_mean_absbx_file):
     plt.savefig("combined_mean_absbx_file.png", dpi=600, bbox_inches='tight')
     plt.close()
 
-# Combined Mean_absBz vs Length
+
 combined_mean_absbz_file = "Plots_combined/Mean_absBz_vs_length.png"
 if not os.path.exists(combined_mean_absbz_file):
     plt.figure()
@@ -361,4 +358,5 @@ if not os.path.exists(combined_mean_absbz_file):
     plt.legend()
     plt.tight_layout()
     plt.savefig("combined_mean_absbz_file.png", dpi=600, bbox_inches='tight')
+
     plt.close()
