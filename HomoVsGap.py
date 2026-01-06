@@ -1,5 +1,5 @@
 """
-Halbach magnetic field vs gap
+Halbach: Magnetic field vs gap
 @author: Fatemeh Alirezaee
 """
 import os
@@ -204,3 +204,4 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("Ratio_Bx_By_vs_gap_all_configs.png", dpi=600, bbox_inches='tight')
 plt.close()
+
