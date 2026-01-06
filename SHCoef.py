@@ -1,3 +1,8 @@
+"""
+Computing spherical harmonics coefficients
+@author: Fatemeh Alirezaee
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -93,9 +98,9 @@ def process_files(l_max=10, radius_mm=100, scale_to_m=True):
     aspect_ratio3 = 3
     aspect_ratios = [aspect_ratio1, aspect_ratio2, aspect_ratio3]
    
-    filepath1 = r"C:\Design\Network_Data\SH\aspect ratio=1.csv"
-    filepath2 = r"C:\Design\Network_Data\SH\aspect ratio=2.csv"
-    filepath3 = r"C:\Design\Network_Data\SH\aspect ratio=3.csv"
+    filepath1 = r"C:\SH\aspect ratio=1.csv"
+    filepath2 = r"C:\SH\aspect ratio=2.csv"
+    filepath3 = r"C:\SH\aspect ratio=3.csv"
     filepaths = [filepath1, filepath2, filepath3]
     directory = os.path.dirname(filepath1)
     files = [os.path.basename(fp) for fp in filepaths]
@@ -173,22 +178,7 @@ def process_files(l_max=10, radius_mm=100, scale_to_m=True):
         for k, (ll, mm, ttyp) in enumerate(params):
             power[ll] += coeffs[k]**2
         power_spectra.append(power)
-      
-        analysis = f"""
-Detailed Analysis for {files[idx]}:
-- Points fitted: {n_points}
-- Uniform: Bx0={np.mean(B_uniform[:,0]):.4f} T, By0={np.mean(B_uniform[:,1]):.4f} T, Bz0={np.mean(B_uniform[:,2]):.4f} T
-- Largest higher-order coeff: {max(np.abs(coeffs[len(uniform_idx):])):.4e} for {params[np.argmax(np.abs(coeffs[len(uniform_idx):])) + len(uniform_idx)]}
-- Original RMS inhomogeneity (ppm): {rms_inhom:.2f}
-- Original PTP inhomogeneity (H_By, ppm): {ptp_inhom:.2f}
-- Reconstructed RMS inhomogeneity (ppm): {rms_inhom:.2f} # Same as fit approximates
-- Reconstructed PTP inhomogeneity (ppm): {ptp_inhom:.2f} # Same
-- Reconstruction RMS error (ppm): {rms_error:.2f}
-- Reconstruction PTP error (ppm): {ptp_error:.2f}
-"""
-        analyses.append(analysis)
   
-    # Generate comparison plots for planes and components
     planes = {
         'yz': {'fixed': 'x', 'coords': (1, 2), 'labels': ('y', 'z'), 'phi_func': lambda yy: np.where(yy >= 0, np.pi/2, 3*np.pi/2)},
         'xz': {'fixed': 'y', 'coords': (0, 2), 'labels': ('x', 'z'), 'phi_func': lambda xx: np.arctan2(0, xx)},
@@ -263,4 +253,5 @@ Detailed Analysis for {files[idx]}:
     with open(os.path.join(directory, 'analysis.txt'), 'w') as f:
         f.write('\n'.join(analyses))
 if __name__ == "__main__":
+
     process_files()
