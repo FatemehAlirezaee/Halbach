@@ -1,5 +1,5 @@
 """
-FID simulation using Magnetic Field map
+FID simulation using magnetic field map
 @author: Fatemeh Alirezaee
 """
 import numpy as np
@@ -13,7 +13,7 @@ t_max = 5e-4  # seconds
 num_t = 10000
 t = np.linspace(0, t_max, num_t)
 
-# Function to compute FID and projections (vectorized for efficiency)
+# Function to compute FID
 def compute_fid(Bx, By, Bz, include_projection=True):
     B_mag = np.sqrt(Bx**2 + By**2 + Bz**2)
     B0 = np.mean(B_mag)
@@ -22,28 +22,27 @@ def compute_fid(Bx, By, Bz, include_projection=True):
         proj = By / B_mag  # cos(theta)
     else:
         proj = np.ones_like(By)
-    # Vectorized phase computation
+
+    
     phases = np.exp(-1j * gamma * delta_B[:, np.newaxis] * t[np.newaxis, :])
     S = np.mean(proj[:, np.newaxis] * phases, axis=0)
     return np.abs(S), proj
 
-# Load field maps (replace paths)
+
+
 constrained_df = pd.read_csv('Constrained.csv')
 unconstrained_df = pd.read_csv('Unconstrained.csv')
 
 Bx_con, By_con, Bz_con = constrained_df['Bx_T'].values, constrained_df['By_T'].values, constrained_df['Bz_T'].values
 Bx_unc, By_unc, Bz_unc = unconstrained_df['Bx_T'].values, unconstrained_df['By_T'].values, unconstrained_df['Bz_T'].values
 
-# Compute FIDs and projs for constrained and unconstrained (full)
+# Compute FIDs and projs
 fid_con, proj_con = compute_fid(Bx_con, By_con, Bz_con)
 fid_unc, proj_unc = compute_fid(Bx_unc, By_unc, Bz_unc)
-
-# Simulate FID with only By (Bx=Bz=0)
 fid_unc_by_only, _ = compute_fid(np.zeros_like(Bx_unc), By_unc, np.zeros_like(Bz_unc), include_projection=False)
 fid_con_by_only, _ = compute_fid(np.zeros_like(Bx_con), By_con, np.zeros_like(Bz_con), include_projection=False)
 
 
-# Initial amplitudes and losses (for full cases)
 initial_con = fid_con[0]
 initial_unc = fid_unc[0]
 loss_con = 1 - np.mean(proj_con)
@@ -51,19 +50,18 @@ loss_unc = 1 - np.mean(proj_unc)
 approx_loss_con = np.mean((Bx_con**2 + Bz_con**2) / (2 * By_con**2))
 approx_loss_unc = np.mean((Bx_unc**2 + Bz_unc**2) / (2 * By_unc**2))
 
-# Normalize FIDs to isolate dephasing decay
+
 fid_con_norm = fid_con / fid_con[0]
 fid_unc_norm = fid_unc / fid_unc[0]
 fid_unc_by_only_norm = fid_unc_by_only / fid_unc_by_only[0]
 fid_con_by_only_norm = fid_con_by_only / fid_con_by_only[0]
 
-# Fit T2*: S_norm(t) ≈ exp(-t / T2*)
 def exp_decay(t, T2star):
     return np.exp(-t / T2star)
 
-# Safe fit function to handle non-decaying (homogeneous) cases
+# Safe fit function for non-decaying (homogeneous) cases
 def safe_fit(t, fid_norm):
-    if np.allclose(fid_norm, 1, atol=1e-10):  # No decay, perfect homogeneous
+    if np.allclose(fid_norm, 1, atol=1e-10): 
         return np.inf
     else:
         try:
@@ -84,7 +82,6 @@ print(f"Unconstrained (full): T2* = {T2star_unc_ms:.6f} ms" if np.isfinite(T2sta
 print(f"Unconstrained (By only): T2* = {T2star_unc_by_only_ms:.6f} ms" if np.isfinite(T2star_unc_by_only_ms) else "Unconstrained (By only): T2* = inf ms")
 print(f"Constrained (By only): T2* = {T2star_con_by_only_ms:.6f} ms" if np.isfinite(T2star_con_by_only_ms) else "Constrained (By only): T2* = inf ms")
 
-# ---- Plot and save FID comparison with T2* annotation ----
 plt.figure(figsize=(10, 6))
 plt.plot(t * 1e3, fid_con, label=f'Constrained full (T2* = {T2star_con_ms:.6f} ms)' if np.isfinite(T2star_con_ms) else 'Constrained full (T2* = inf ms)')
 plt.plot(t * 1e3, fid_unc, label=f'Unconstrained full (T2* = {T2star_unc_ms:.6f} ms)', linestyle='--' if np.isfinite(T2star_unc_ms) else 'Unconstrained full (T2* = inf ms)')
@@ -98,4 +95,5 @@ plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.savefig('FID_comparison_T2star.png', dpi=600, bbox_inches='tight')
+
 plt.close()
